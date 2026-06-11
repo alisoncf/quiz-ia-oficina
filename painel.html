@@ -122,9 +122,8 @@ header{background:#0A1E2B;padding:.75rem 1.5rem;display:flex;align-items:center;
 <script>
 // ⚠️ SUBSTITUA pelas URLs CSV das duas abas da planilha
 // Aba "Medos_Iniciais" publicada como CSV:
-const CSV_MEDOS = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWxd1HkPllX4RWXCV0N_BdXwn99sF6gbJgSXi4UVv-Nb3cRyFJHarSGr5MSnYWEfAoDwoVBSikHw6F/pub?gid=779833720&single=true&output=csv';
-// Aba "Respostas" publicada como CSV:
-const CSV_QUIZ  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWxd1HkPllX4RWXCV0N_BdXwn99sF6gbJgSXi4UVv-Nb3cRyFJHarSGr5MSnYWEfAoDwoVBSikHw6F/pub?gid=1634916475&single=true&output=csv';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1g-YfPPrPO9M66qB73rdNKWR0SwhIYyHgJ2wFDG7b9BYYC-qp-l0DfriyB_SgRwbEIw/exec';
+
 const Q1_OPTS = ['Claude','ChatGPT','NotebookLM','Perplexity AI','Zotero + IA'];
 const Q2_OPTS = [
   'Verificar referências geradas pela IA',
@@ -210,13 +209,15 @@ async function fetchData(){
   document.getElementById('status-txt').textContent='⬤ atualizando…';
   document.getElementById('status-txt').style.color='#90a4ae';
   try {
-    const [rMedos,rQuiz] = await Promise.all([
-      fetch(CSV_MEDOS+'&t='+Date.now()).then(r=>r.text()),
-      fetch(CSV_QUIZ+'&t='+Date.now()).then(r=>r.text())
-    ]);
-
-    const medos = parseMedos(rMedos);
-    const rows  = parseQuiz(rQuiz);
+    const resp = await fetch(SCRIPT_URL+'?t='+Date.now());
+    const json = await resp.json();
+    const medos = json.medos || [];
+    const rows  = (json.quiz || []).map(r=>({
+      q1:r.q1, q2:r.q2, q3:r.q3, q4:r.q4, q5:r.q5,
+      sc_Claude:+r.sc_Claude, sc_ChatGPT:+r.sc_ChatGPT,
+      sc_NotebookLM:+r.sc_NotebookLM, sc_Perplexity:+r.sc_Perplexity,
+      sc_Zotero:+r.sc_Zotero, palavra:r.palavra
+    }));
     const n = rows.length;
 
     document.getElementById('badge-medo').textContent = medos.length + (medos.length===1?' medo':' medos');
