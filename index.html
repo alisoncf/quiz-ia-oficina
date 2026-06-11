@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — IA na Prática · PROMEP/UEG</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f9fb;min-height:100vh;padding:0 0 2rem}
+
+header{background:#0D2D3E;color:#fff;padding:1rem 1.25rem;text-align:center}
+header h1{font-size:18px;font-weight:600;margin-bottom:2px}
+header p{font-size:13px;color:#9FE1CB;opacity:.9}
+
+.container{max-width:520px;margin:0 auto;padding:1rem 1rem 0}
+
+.card{background:#fff;border-radius:12px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-label{font-size:11px;font-weight:600;color:#0A7E8C;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.card-q{font-size:16px;font-weight:500;color:#1C2B36;margin-bottom:14px;line-height:1.45}
+
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:15px;color:#1C2B36;background:#fafafa;transition:all .15s;user-select:none}
+.opt:active{transform:scale(.98)}
+.opt.selected{border-color:#0A7E8C;background:#E1F5EE;color:#085041}
+.opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.opt.selected .radio{border-color:#0A7E8C;background:#0A7E8C}
+.opt.selected .radio::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff}
+
+.tf-row{display:flex;gap:10px}
+.tf-btn{flex:1;padding:13px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:15px;font-weight:500;background:#fafafa;color:#1C2B36;transition:all .15s;text-align:center}
+.tf-btn:active{transform:scale(.97)}
+.tf-btn.sel-v{background:#E1F5EE;border-color:#0A7E8C;color:#085041}
+.tf-btn.sel-f{background:#FCEBEB;border-color:#A32D2D;color:#501313}
+
+.scale-tool{margin-bottom:14px}
+.scale-tool:last-child{margin-bottom:0}
+.scale-name{font-size:14px;color:#455A64;margin-bottom:6px;font-weight:500}
+.scale-btns{display:flex;gap:6px}
+.sc-btn{flex:1;height:42px;border:1.5px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:16px;font-weight:600;background:#fafafa;color:#455A64;transition:all .15s}
+.sc-btn.sel{background:#0A7E8C;border-color:#0A7E8C;color:#fff}
+.sc-btn:active{transform:scale(.95)}
+.scale-legend{display:flex;justify-content:space-between;font-size:11px;color:#90a4ae;margin-top:4px;padding:0 2px}
+
+textarea{width:100%;padding:12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:16px;font-family:inherit;color:#1C2B36;background:#fafafa;resize:none;outline:none;transition:border-color .15s}
+textarea:focus{border-color:#0A7E8C}
+
+.submit-btn{width:100%;padding:15px;background:#0A7E8C;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:.5rem;letter-spacing:.2px;transition:background .15s}
+.submit-btn:active{background:#085041}
+.submit-btn:disabled{background:#b0bec5;cursor:not-allowed}
+
+.error-msg{color:#A32D2D;font-size:13px;text-align:center;margin-top:.5rem;display:none}
+
+.success-screen{display:none;text-align:center;padding:3rem 1.5rem}
+.success-icon{font-size:56px;margin-bottom:1rem}
+.success-screen h2{font-size:22px;font-weight:600;color:#0D2D3E;margin-bottom:.5rem}
+.success-screen p{font-size:15px;color:#607d8b;line-height:1.5}
+
+.progress-bar{height:4px;background:#1AABB8;width:0;position:fixed;top:0;left:0;transition:width .3s;z-index:99}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+
+<header>
+  <h1>Quiz — IA na Prática</h1>
+  <p>Oficina 2 · PROMEP/UEG · Câmpus Cora Coralina</p>
+</header>
+
+<div class="container" id="form-wrap">
+
+  <!-- Q1 -->
+  <div class="card">
+    <div class="card-label">Pergunta 1 de 7 · Múltipla escolha</div>
+    <div class="card-q">Qual ferramenta você mais usaria na sua pesquisa a partir de hoje?</div>
+    <div class="opts" id="q1">
+      <div class="opt" onclick="pick('q1',this)"><span class="radio"></span>Claude</div>
+      <div class="opt" onclick="pick('q1',this)"><span class="radio"></span>ChatGPT</div>
+      <div class="opt" onclick="pick('q1',this)"><span class="radio"></span>NotebookLM</div>
+      <div class="opt" onclick="pick('q1',this)"><span class="radio"></span>Perplexity AI</div>
+      <div class="opt" onclick="pick('q1',this)"><span class="radio"></span>Zotero + IA</div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="card">
+    <div class="card-label">Pergunta 2 de 7 · Múltipla escolha</div>
+    <div class="card-q">O que você aprendeu que vai mudar sua forma de trabalhar?</div>
+    <div class="opts" id="q2">
+      <div class="opt" onclick="pick('q2',this)"><span class="radio"></span>Verificar referências geradas pela IA</div>
+      <div class="opt" onclick="pick('q2',this)"><span class="radio"></span>Usar IA para escrita e revisão de textos</div>
+      <div class="opt" onclick="pick('q2',this)"><span class="radio"></span>Analisar documentos com NotebookLM</div>
+      <div class="opt" onclick="pick('q2',this)"><span class="radio"></span>Declarar o uso de IA nos trabalhos</div>
+      <div class="opt" onclick="pick('q2',this)"><span class="radio"></span>Usar Zotero para organizar fontes</div>
+    </div>
+  </div>
+
+  <!-- Q3 V/F -->
+  <div class="card">
+    <div class="card-label">Pergunta 3 de 7 · Verdadeiro ou Falso</div>
+    <div class="card-q">Posso usar a IA para gerar referências bibliográficas sem precisar verificar.</div>
+    <div class="tf-row">
+      <div class="tf-btn" onclick="pickTF('q3','V',this)">Verdadeiro</div>
+      <div class="tf-btn" onclick="pickTF('q3','F',this)">Falso</div>
+    </div>
+  </div>
+
+  <!-- Q4 V/F -->
+  <div class="card">
+    <div class="card-label">Pergunta 4 de 7 · Verdadeiro ou Falso</div>
+    <div class="card-q">Devo declarar o uso de IA nos meus trabalhos acadêmicos.</div>
+    <div class="tf-row">
+      <div class="tf-btn" onclick="pickTF('q4','V',this)">Verdadeiro</div>
+      <div class="tf-btn" onclick="pickTF('q4','F',this)">Falso</div>
+    </div>
+  </div>
+
+  <!-- Q5 V/F -->
+  <div class="card">
+    <div class="card-label">Pergunta 5 de 7 · Verdadeiro ou Falso</div>
+    <div class="card-q">A IA substitui o raciocínio crítico do pesquisador.</div>
+    <div class="tf-row">
+      <div class="tf-btn" onclick="pickTF('q5','V',this)">Verdadeiro</div>
+      <div class="tf-btn" onclick="pickTF('q5','F',this)">Falso</div>
+    </div>
+  </div>
+
+  <!-- Q6 Escala -->
+  <div class="card">
+    <div class="card-label">Pergunta 6 de 7 · Escala de confiança</div>
+    <div class="card-q">Quanto você se sente confiante para usar cada ferramenta? (0 = nenhuma · 5 = muita)</div>
+    <div id="scales">
+      <div class="scale-tool">
+        <div class="scale-name">Claude</div>
+        <div class="scale-btns" id="sc-Claude"></div>
+        <div class="scale-legend"><span>Nenhuma</span><span>Muita</span></div>
+      </div>
+      <div class="scale-tool">
+        <div class="scale-name">ChatGPT</div>
+        <div class="scale-btns" id="sc-ChatGPT"></div>
+        <div class="scale-legend"><span>Nenhuma</span><span>Muita</span></div>
+      </div>
+      <div class="scale-tool">
+        <div class="scale-name">NotebookLM</div>
+        <div class="scale-btns" id="sc-NotebookLM"></div>
+        <div class="scale-legend"><span>Nenhuma</span><span>Muita</span></div>
+      </div>
+      <div class="scale-tool">
+        <div class="scale-name">Perplexity AI</div>
+        <div class="scale-btns" id="sc-Perplexity"></div>
+        <div class="scale-legend"><span>Nenhuma</span><span>Muita</span></div>
+      </div>
+      <div class="scale-tool">
+        <div class="scale-name">Zotero + IA</div>
+        <div class="scale-btns" id="sc-Zotero"></div>
+        <div class="scale-legend"><span>Nenhuma</span><span>Muita</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q7 Palavra livre -->
+  <div class="card">
+    <div class="card-label">Pergunta 7 de 7 · Palavra livre</div>
+    <div class="card-q">Em UMA palavra: para você, IA é…</div>
+    <textarea id="q7" rows="2" maxlength="40" placeholder="Digite uma palavra..."></textarea>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitForm()">Enviar respostas</button>
+  <p class="error-msg" id="error-msg">Por favor, responda todas as perguntas antes de enviar.</p>
+  <div style="height:1rem"></div>
+</div>
+
+<!-- Tela de sucesso -->
+<div class="container" id="success-wrap">
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <h2>Resposta enviada!</h2>
+    <p>Obrigado pela participação.<br>Acompanhe os resultados no telão.</p>
+  </div>
+</div>
+
+<script>
+// ⚠️ SUBSTITUA pela URL do seu Google Apps Script após publicar
+const SCRIPT_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+
+const state = { q1:null, q2:null, q3:null, q4:null, q5:null, scales:{}, q7:'' };
+const TOOLS = ['Claude','ChatGPT','NotebookLM','Perplexity','Zotero'];
+
+// Monta escalas
+TOOLS.forEach(t => {
+  const el = document.getElementById('sc-' + t);
+  for(let i = 0; i <= 5; i++){
+    const b = document.createElement('button');
+    b.className = 'sc-btn'; b.textContent = i;
+    b.onclick = () => {
+      el.querySelectorAll('.sc-btn').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+      state.scales[t] = i;
+      updateProgress();
+    };
+    el.appendChild(b);
+  }
+});
+
+function pick(q, el){
+  document.querySelectorAll('#' + q + ' .opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state[q] = el.textContent.trim();
+  updateProgress();
+}
+
+function pickTF(q, val, el){
+  el.closest('.tf-row').querySelectorAll('.tf-btn').forEach(b => b.classList.remove('sel-v','sel-f'));
+  el.classList.add(val === 'V' ? 'sel-v' : 'sel-f');
+  state[q] = val;
+  updateProgress();
+}
+
+function updateProgress(){
+  const filled = [state.q1, state.q2, state.q3, state.q4, state.q5,
+    TOOLS.every(t => state.scales[t] !== undefined && state.scales[t] !== null) ? 'ok' : null,
+    document.getElementById('q7').value.trim() ? 'ok' : null
+  ].filter(Boolean).length;
+  document.getElementById('progress').style.width = (filled / 7 * 100) + '%';
+}
+
+document.getElementById('q7').addEventListener('input', updateProgress);
+
+async function submitForm(){
+  const q7v = document.getElementById('q7').value.trim().split(/\s+/)[0] || '';
+  const allScales = TOOLS.every(t => state.scales[t] !== undefined && state.scales[t] !== null);
+  if(!state.q1 || !state.q2 || !state.q3 || !state.q4 || !state.q5 || !allScales || !q7v){
+    const msg = document.getElementById('error-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 3000);
+    return;
+  }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  const payload = {
+    q1: state.q1, q2: state.q2,
+    q3: state.q3, q4: state.q4, q5: state.q5,
+    sc_Claude: state.scales['Claude'],
+    sc_ChatGPT: state.scales['ChatGPT'],
+    sc_NotebookLM: state.scales['NotebookLM'],
+    sc_Perplexity: state.scales['Perplexity'],
+    sc_Zotero: state.scales['Zotero'],
+    palavra: q7v,
+    ts: new Date().toISOString()
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) { /* no-cors não retorna erro */ }
+
+  document.getElementById('form-wrap').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'block';
+  document.getElementById('progress').style.width = '100%';
+  document.getElementById('progress').style.background = '#1AABB8';
+}
+</script>
+</body>
+</html>

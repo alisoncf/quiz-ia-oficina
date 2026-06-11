@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel ao Vivo — Quiz IA · PROMEP/UEG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0D2D3E;color:#fff;min-height:100vh}
+
+header{background:#0A1E2B;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08)}
+.header-title h1{font-size:18px;font-weight:600}
+.header-title p{font-size:12px;color:#9FE1CB;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:12px}
+.badge{background:#0A7E8C;color:#fff;border-radius:99px;padding:5px 14px;font-size:14px;font-weight:600}
+.badge-medo{background:#1a3a5c}
+.status{font-size:12px;color:#90a4ae}
+.refresh-btn{background:rgba(255,255,255,.1);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer}
+.refresh-btn:hover{background:rgba(255,255,255,.18)}
+
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:1rem 1.25rem .5rem}
+.metric{background:rgba(255,255,255,.07);border-radius:10px;padding:.75rem 1rem;text-align:center}
+.metric-n{font-size:30px;font-weight:600;color:#1AABB8}
+.metric-l{font-size:11px;color:#90a4ae;margin-top:2px}
+
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 1.25rem .5rem}
+.chart-card{background:rgba(255,255,255,.07);border-radius:10px;padding:1rem}
+.chart-card.full{grid-column:1/-1}
+.card-title{font-size:12px;font-weight:600;color:#9FE1CB;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.75rem}
+
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{min-width:130px;color:#cfd8dc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.bar-track{flex:1;height:20px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#0A7E8C,#1AABB8);border-radius:4px;transition:width .6s ease}
+.bar-val{min-width:24px;text-align:right;color:#fff;font-weight:500;font-size:13px}
+
+.tf-block{margin-bottom:10px}
+.tf-name{font-size:12px;color:#90a4ae;margin-bottom:5px}
+.tf-bars{display:flex;gap:6px;height:28px}
+.tf-v{background:#0A7E8C;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;min-width:32px;transition:flex .6s ease}
+.tf-f{background:#793232;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;min-width:32px;transition:flex .6s ease}
+
+.gauge-row{display:flex;gap:8px;flex-wrap:wrap}
+.gauge{flex:1;min-width:80px;text-align:center}
+.gauge-name{font-size:11px;color:#90a4ae;margin-bottom:4px}
+.gauge-ring{position:relative;width:64px;height:64px;margin:0 auto 4px}
+.gauge-ring svg{transform:rotate(-90deg)}
+.gauge-val{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:600;color:#1AABB8}
+
+/* Nuvens lado a lado */
+.clouds-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cloud-box{background:rgba(255,255,255,.07);border-radius:10px;padding:1rem}
+.cloud-title{font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:.75rem}
+.cloud-title.before{color:#E8A838}
+.cloud-title.after{color:#9FE1CB}
+.cloud{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;min-height:90px;padding:.25rem}
+.word-before{font-weight:600;color:#E8A838}
+.word-after{font-weight:600;color:#1AABB8}
+
+.empty{text-align:center;padding:1.5rem;color:#546e7a;font-size:13px}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">
+    <h1>Painel ao Vivo — IA na Prática</h1>
+    <p>PROMEP/UEG · Câmpus Cora Coralina</p>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-medo" id="badge-medo">0 medos</span>
+    <span class="badge" id="badge-quiz">0 respostas quiz</span>
+    <span class="status pulse" id="status-txt">⬤ atualizando…</span>
+    <button class="refresh-btn" onclick="fetchData()">↻ Agora</button>
+  </div>
+</header>
+
+<div class="grid5" id="metrics">
+  <div class="metric"><div class="metric-n" id="m-total">—</div><div class="metric-l">respostas quiz</div></div>
+  <div class="metric"><div class="metric-n" id="m-q3">—</div><div class="metric-l">acertaram Q3</div></div>
+  <div class="metric"><div class="metric-n" id="m-q4">—</div><div class="metric-l">acertaram Q4</div></div>
+  <div class="metric"><div class="metric-n" id="m-q5">—</div><div class="metric-l">acertaram Q5</div></div>
+  <div class="metric"><div class="metric-n" id="m-conf">—</div><div class="metric-l">confiança média</div></div>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="card-title">Ferramenta preferida</div>
+    <div id="bar-q1"><div class="empty">Aguardando dados…</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="card-title">O que vai mudar no trabalho</div>
+    <div id="bar-q2"><div class="empty">Aguardando dados…</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="card-title">Verdadeiro ou Falso — ética</div>
+    <div id="tf-panel"><div class="empty">Aguardando dados…</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="card-title">Confiança nas ferramentas (média 0–5)</div>
+    <div class="gauge-row" id="gauges"><div class="empty">Aguardando dados…</div></div>
+  </div>
+
+  <!-- Nuvens: antes e depois, lado a lado -->
+  <div class="chart-card full">
+    <div class="clouds-grid">
+      <div class="cloud-box">
+        <div class="cloud-title before">🟡 Antes — "O que você sente sobre IA?"</div>
+        <div class="cloud" id="cloud-antes"><div class="empty">Aguardando respostas iniciais…</div></div>
+      </div>
+      <div class="cloud-box">
+        <div class="cloud-title after">🟢 Depois — "IA é…"</div>
+        <div class="cloud" id="cloud-depois"><div class="empty">Aguardando quiz final…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ⚠️ SUBSTITUA pelas URLs CSV das duas abas da planilha
+// Aba "Medos_Iniciais" publicada como CSV:
+const CSV_MEDOS = 'COLE_AQUI_URL_CSV_ABA_MEDOS_INICIAIS';
+// Aba "Respostas" publicada como CSV:
+const CSV_QUIZ  = 'COLE_AQUI_URL_CSV_ABA_RESPOSTAS';
+
+const Q1_OPTS = ['Claude','ChatGPT','NotebookLM','Perplexity AI','Zotero + IA'];
+const Q2_OPTS = [
+  'Verificar referências geradas pela IA',
+  'Usar IA para escrita e revisão de textos',
+  'Analisar documentos com NotebookLM',
+  'Declarar o uso de IA nos trabalhos',
+  'Usar Zotero para organizar fontes'
+];
+const TF_LABELS = {
+  q3:{label:'Referências sem verificar',correct:'F'},
+  q4:{label:'Declarar uso da IA',correct:'V'},
+  q5:{label:'IA substitui o pesquisador',correct:'F'}
+};
+const TOOLS = ['Claude','ChatGPT','NotebookLM','Perplexity','Zotero'];
+
+function parseQuiz(text){
+  return text.trim().split('\n').slice(1).map(line=>{
+    const c = line.split(',').map(x=>x.replace(/^"|"$/g,'').trim());
+    return {ts:c[0],q1:c[1],q2:c[2],q3:c[3],q4:c[4],q5:c[5],
+      sc_Claude:+c[6],sc_ChatGPT:+c[7],sc_NotebookLM:+c[8],sc_Perplexity:+c[9],sc_Zotero:+c[10],palavra:c[11]};
+  }).filter(r=>r.q1);
+}
+
+function parseMedos(text){
+  return text.trim().split('\n').slice(1).map(line=>{
+    const c = line.split(',').map(x=>x.replace(/^"|"$/g,'').trim());
+    return c[1]||'';
+  }).filter(Boolean);
+}
+
+function buildCloud(texts, elId, cssClass){
+  const el = document.getElementById(elId);
+  if(!texts.length){el.innerHTML='<div class="empty">Aguardando…</div>';return;}
+  const freq={};
+  texts.forEach(t=>{
+    t.toLowerCase().trim().split(/\s+/).slice(0,3).forEach(w=>{
+      w=w.replace(/[.,;!?]/g,'');
+      if(w.length>2) freq[w]=(freq[w]||0)+1;
+    });
+  });
+  const max=Math.max(...Object.values(freq));
+  el.innerHTML=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,30)
+    .map(([w,c])=>`<span class="${cssClass}" style="font-size:${13+Math.round(c/max*24)}px;opacity:${(0.5+c/max*0.5).toFixed(2)}">${w}</span>`)
+    .join('');
+}
+
+function renderBars(id,opts,vals,n){
+  const el=document.getElementById(id);
+  if(!n){el.innerHTML='<div class="empty">Aguardando dados…</div>';return;}
+  const counts={};opts.forEach(o=>counts[o]=0);vals.forEach(v=>{if(counts[v]!==undefined)counts[v]++;});
+  el.innerHTML=[...opts].sort((a,b)=>counts[b]-counts[a]).map(o=>{
+    const c=counts[o],pct=Math.round(c/n*100);
+    return `<div class="bar-row"><span class="bar-lbl" title="${o}">${o}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span class="bar-val">${c}</span></div>`;
+  }).join('');
+}
+
+function renderTF(rows,n){
+  const el=document.getElementById('tf-panel');
+  if(!n){el.innerHTML='<div class="empty">Aguardando dados…</div>';return;}
+  el.innerHTML=Object.entries(TF_LABELS).map(([q,{label,correct}])=>{
+    const vCount=rows.filter(r=>r[q]==='V').length,fCount=n-vCount;
+    const pct=Math.round((correct==='V'?vCount:fCount)/n*100);
+    return `<div class="tf-block"><div class="tf-name">${label} <span style="color:#9FE1CB;font-size:10px">✓ ${correct==='V'?'Verdadeiro':'Falso'} (${pct}%)</span></div>
+    <div class="tf-bars"><div class="tf-v" style="flex:${Math.max(vCount,.5)}">${vCount} V</div><div class="tf-f" style="flex:${Math.max(fCount,.5)}">${fCount} F</div></div></div>`;
+  }).join('');
+}
+
+function renderGauges(rows,n){
+  const el=document.getElementById('gauges');
+  if(!n){el.innerHTML='<div class="empty">Aguardando dados…</div>';return;}
+  el.innerHTML=TOOLS.map(t=>{
+    const avg=(rows.reduce((s,r)=>s+(+r['sc_'+t]||0),0)/n).toFixed(1);
+    const pct=Math.round(avg/5*100),r=28,circ=2*Math.PI*r,dash=circ*pct/100;
+    return `<div class="gauge"><div class="gauge-name">${t}</div><div class="gauge-ring">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="${r}" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="6"/>
+        <circle cx="32" cy="32" r="${r}" fill="none" stroke="#0A7E8C" stroke-width="6" stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+      </svg><div class="gauge-val">${avg}</div></div></div>`;
+  }).join('');
+}
+
+async function fetchData(){
+  document.getElementById('status-txt').textContent='⬤ atualizando…';
+  document.getElementById('status-txt').style.color='#90a4ae';
+  try {
+    const [rMedos,rQuiz] = await Promise.all([
+      fetch(CSV_MEDOS+'&t='+Date.now()).then(r=>r.text()),
+      fetch(CSV_QUIZ+'&t='+Date.now()).then(r=>r.text())
+    ]);
+
+    const medos = parseMedos(rMedos);
+    const rows  = parseQuiz(rQuiz);
+    const n = rows.length;
+
+    document.getElementById('badge-medo').textContent = medos.length + (medos.length===1?' medo':' medos');
+    document.getElementById('badge-quiz').textContent = n + (n===1?' resposta':' respostas');
+    document.getElementById('m-total').textContent = n;
+
+    if(n){
+      const q3ok=rows.filter(r=>r.q3==='F').length;
+      const q4ok=rows.filter(r=>r.q4==='V').length;
+      const q5ok=rows.filter(r=>r.q5==='F').length;
+      const avgConf=(TOOLS.map(t=>rows.reduce((s,r)=>s+(+r['sc_'+t]||0),0)/n).reduce((a,b)=>a+b,0)/TOOLS.length).toFixed(1);
+      document.getElementById('m-q3').textContent=Math.round(q3ok/n*100)+'%';
+      document.getElementById('m-q4').textContent=Math.round(q4ok/n*100)+'%';
+      document.getElementById('m-q5').textContent=Math.round(q5ok/n*100)+'%';
+      document.getElementById('m-conf').textContent=avgConf;
+    } else {
+      ['m-q3','m-q4','m-q5','m-conf'].forEach(id=>document.getElementById(id).textContent='—');
+    }
+
+    renderBars('bar-q1',Q1_OPTS,rows.map(r=>r.q1),n);
+    renderBars('bar-q2',Q2_OPTS,rows.map(r=>r.q2),n);
+    renderTF(rows,n);
+    renderGauges(rows,n);
+
+    buildCloud(medos,'cloud-antes','word-before');
+    buildCloud(rows.map(r=>r.palavra).filter(Boolean),'cloud-depois','word-after');
+
+    document.getElementById('status-txt').textContent='⬤ '+new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('status-txt').style.color='#9FE1CB';
+  } catch(err){
+    document.getElementById('status-txt').textContent='⚠ erro ao carregar';
+    document.getElementById('status-txt').style.color='#f48fb1';
+  }
+}
+
+fetchData();
+setInterval(fetchData,15000);
+</script>
+</body>
+</html>
